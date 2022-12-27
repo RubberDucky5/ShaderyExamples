@@ -1,0 +1,83 @@
+vec3 flor;
+vec3 obj;
+vec3 shad;
+
+vec3 u8tofloat(float r, float g, float b) {
+    return vec3(r/255.,g/255.,b/255.);
+}
+
+vec2 getmouse() {
+    vec2 m = vec2(iMouse.x / iResolution.x, iMouse.y / iResolution.y);
+    m *= vec2(1., iResolution.y / iResolution.x);
+    m += vec2(0, 0.34);
+    return m;
+}
+
+float segsd (vec2 p, vec2 a, vec2 b) {
+    vec2 pa = p - a, ba = b - a;
+    float h = clamp (dot(pa,ba) / dot(ba,ba), 0.0, 1.0);
+    return length(pa-ba*h);
+}
+
+float boxsd(vec2 p, vec2 a, vec2 b ) {
+    p-= a;
+    vec2 d = abs(p)-b;
+    return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+}
+
+float moonsd(vec2 p, float d, float ra, float rb )
+{
+    p.y = abs(p.y);
+    float a = (ra*ra - rb*rb + d*d)/(2.0*d);
+    float b = sqrt(max(ra*ra-a*a,0.0));
+    if( d*(p.x*b-p.y*a) > d*d*max(b-p.y,0.0) )
+          return length(p-vec2(a,b));
+    return max( (length(p          )-ra),
+               -(length(p-vec2(d,0))-rb));
+}
+
+float getdist(vec2 p) {
+    float db1 = boxsd(p, vec2(0.8, 0.25), vec2(.05, .05));
+    float db2 = boxsd(p, vec2(0.2, 0.25), vec2(.05, .05));
+    float sd1 = moonsd(p-vec2(0.5, 0.25), 0.1, 0.1, 0.1);
+    return min(sd1, min(db1, db2));
+}
+
+float raycast (vec2 p, vec2 a) {
+    float dO = 0.0;
+    for(int i = 0; i < 100; i++){
+        float d = getdist(p + a*dO);
+        if(d <= 0.001 || dO >= 50.)
+            break;
+        dO += d;
+    }
+    return dO;
+}
+
+vec3 getcol (vec2 p) {
+    float d = getdist(p);
+    vec2 light = getmouse();
+    if(distance(p,light) < 0.005)
+        return vec3(1,0,0);
+    if(d<0.001)
+        return obj;
+    
+    vec2 dir = normalize(light-p);
+    if (raycast(p, dir) <= distance(p, light))
+        return shad;
+    
+    return flor;
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ){
+    shad = u8tofloat(46., 51., 61.);
+    obj = u8tofloat(75., 118., 211.);
+    flor = u8tofloat(82., 97., 130.);
+    
+	vec2 uv = fragCoord.xy/iResolution.xy;
+	uv *= vec2(1., iResolution.y / iResolution.x);
+	
+	vec3 col = getcol(uv);
+	
+	fragColor = vec4(col, 1.0);
+}
