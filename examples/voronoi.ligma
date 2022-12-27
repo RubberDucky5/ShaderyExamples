@@ -1,0 +1,57 @@
+// Jame, 12/7/22
+// Optimized Voronoi
+
+float seed;
+
+float rand(){
+    seed += fract(sin(seed * 0.54667) * 7673.6344);
+    return fract(sin(seed * 0.45234) * 6783.2674);
+}
+
+float hash(vec2 coords) {
+    return coords.x + 0.9124 * coords.y + 0.8432;
+}
+
+vec2 off() {
+    float a = rand() * 6.28;
+    float l = rand() / 2.;
+    float ts = 0.5+0.5*rand() * iTime * 1.;
+    return vec2(sin(a + ts) * l, cos(a + ts) * l) + 0.5;
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ){
+    // I forgor how to make 
+    float divs = 10.;
+    seed = fragCoord.x * fragCoord.y;
+	vec2 uv = fragCoord.xy/iResolution.xy;
+	uv *= vec2(1, iResolution.y/iResolution.x);
+	
+	// Mod uvs gives the grid
+	vec2 pv = mod(uv*divs, 1.);
+	// This gets an "ID" for each grid cell
+	vec2 coords = vec2(floor(uv.x*divs), floor(uv.y*divs));
+	// Random repeatable for each cell, this is only used for debug
+	seed = hash(coords);
+	vec2 offset = vec2(off());
+	
+	// Loop through each neighboring cell
+	float minv = 100.;
+	for(int x = -1; x < 2; x++){
+	    for(int y = -1; y < 2; y++){
+	        vec2 go = vec2(x, y);
+	        seed = hash(coords+go);
+	        vec2 no = vec2(off());
+	        minv = min(minv, distance(pv, go + no));
+	    }
+	}
+	
+	vec3 col = vec3(minv);
+	
+	// Debug
+// 	if(pv.x > 0.95 || pv.y > 0.95)
+	   // col = vec3(1., 0, 0);
+// 	if(length(pv - offset) < 0.05)
+	   // col = vec3(1,0,0);
+	
+	fragColor = vec4(col, 1.0);
+}

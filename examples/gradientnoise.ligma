@@ -1,0 +1,63 @@
+float seed;
+float rand(){
+    seed += fract(sin(seed * 0.54667) * 7673.6344);
+    return fract(sin(seed * 0.45234) * 6783.2674);
+}
+
+float rand(vec2 p) {
+    seed = (p.x+421.231) * (p.y+434.242);
+    return fract(sin(seed * 0.45234) * 6783.2674);
+}
+
+vec2 rand2(vec2 st) {
+    st += vec2(33.134,24.324);
+    st = vec2( dot(st,vec2(532.6,432.1)),
+              dot(st,vec2(726.2,732.6)) );
+    return -1.0 + 2.0*fract(sin(st)*9876.654567);
+}
+
+float noise(vec2 p) {
+    vec2 l = floor(p);
+    vec2 r = fract(p);
+    
+    vec2 u = r*r*(3.0-2.0*r);
+    vec2 o = vec2(1.0, 0.0);
+    
+    return 0.5+0.5*mix(
+            mix( dot( rand2( l + o.yy ), r - o.yy ),
+                 dot( rand2( l + o.xy ), r - o.xy ), u.x),
+            mix( dot( rand2( l + o.yx ), r - o.yx ),
+                 dot( rand2( l + o.xx ), r - o.xx ), u.x), u.y);
+}
+
+float noiseOctaves (vec2 p, int octaves) {
+    float col = 0.;
+    float divisor = 0.;
+    for(float i = 1.; i < float(octaves+1); i++) {
+	    col += noise(p*10. * i)/i;
+	    divisor += 1. / i;
+	    p += vec2(rand(vec2(i, i*34.2)), rand(vec2(i, i*4.12)));
+	}
+	col /= divisor;
+	return col;
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ){
+	vec2 uv = fragCoord.xy/iResolution.xy;
+	uv *= vec2(1., iResolution.y/iResolution.x);
+    uv -= vec2(iMouse2.xy / iResolution.xy) * vec2(1., iResolution.y / iResolution.x);
+	
+	vec3 col = vec3(0);
+    col.r = noiseOctaves(uv, 5);
+    col.g = noiseOctaves(uv+43.613, 5);
+    col.b = noiseOctaves(uv+65.432, 5);
+    
+    // if (col.r > 0.5){
+    //     col = vec3(1);
+    // }
+    // else {
+    //     col = vec3(0);
+    // }
+	
+	fragColor = vec4(col, 1.0);
+}
