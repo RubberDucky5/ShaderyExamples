@@ -10,4 +10,4 @@
 ![pathtracer](../images/pathtracer.png)
 
 ### voronoi.ligma
-![voronoi](voronoi.png)
+![voronoi](../images/voronoi.png)
